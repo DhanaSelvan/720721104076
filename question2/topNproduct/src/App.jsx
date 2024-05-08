@@ -1,33 +1,59 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import Header from './components/Header'
+import MainRoutes from './Routes'
 
 function App() {
-  const [count, setCount] = useState(0)
+
+  const [token, setToken] = useState('')
+  const [records,setRecords] = useState([])
+
+  const getToken = async () => {
+    try{
+      const authData = await fetch('https://20.244.56.144/test/auth', {
+        method: 'POST',
+        body: JSON.stringify({
+          "companyName": "DhanaselvanJU",
+          "clientID": "058ffa03-3bc1-425a-8474-349d231c472f",
+          "clientSecret": "RFVCExRZeRcNBlFI",
+          "ownerName": "Dhanaselvan",
+          "ownerEmail": "dhanaselvancse@gmail.com",
+          "rollNo": "720721104076"
+        })
+      })
+      const resultJson = await authData.json()
+      setToken(resultJson)
+      return resultJson.access_token
+    } catch(err){
+      console.log(err)
+    }
+  }
+
+  useEffect(()=>{
+    getToken()
+  }, [])
+
+  const handleData = async (Company, Categories, minprice, maxprice) => {
+    const token = await getToken()
+    try{
+      const resultData = await fetch('https://20.244.56.144/test/companies/${Company}/categories/${Categories}/products?top=10&minPrice=${minprice}&maxPrice=${maxPrice}', {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      const dataJson = await resultData.json()
+      setRecords(dataJson)
+    } catch(err){
+      console.log(err)
+    }
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <MainRoutes handleData={handleData}/>
     </>
   )
 }
